@@ -1,0 +1,14 @@
+# Qt
+*.pro.user
+*.user
+*.user.*
+build-*
+*.autosave
+
+# C++
+*.o
+*.obj
+
+# IDE
+.vscode/
+.idea/

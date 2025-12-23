@@ -1,0 +1,35 @@
+#ifndef TRIANGLE_H
+#define TRIANGLE_H
+
+#include <Figures.h>
+#include <ostream>
+#include <istream>
+
+class CTriangle : public CFigure
+{
+private:
+
+    QPoint a;
+    QPoint b;
+    QPoint c;
+
+public:
+    CTriangle(QPoint p1, QPoint p2);
+    ~CTriangle(){}
+
+    void paintt(QPainter *p) override;
+    bool MouseIn(int x, int y) override;
+    void SizeChange(int size, int winW, int winH) override;
+
+    void Move(int dx, int dy, int winW, int winH, bool notifyObs = true, int token = 0) override;
+    int Width() override;
+    int Height() override;
+
+    QString Type() const override { return "T"; }
+    void save(std::ostream& out) const override;
+    void load(std::istream& in, CFactory* factory) override;
+};
+
+
+
+#endif // TRIANGLE_H
