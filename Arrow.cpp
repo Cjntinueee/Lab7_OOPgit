@@ -110,9 +110,6 @@ void CArrow::paintA(QPainter* p)
     QPoint p1 = centerOf(A);
     QPoint p2 = centerOf(B);
 
-
-
-
     const double angle = std::atan2(double(p2.y() - p1.y()), double(p2.x() - p1.x()));
     const double len = 12.0;
     const double a1 = angle + M_PI * 0.85;

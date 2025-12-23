@@ -388,7 +388,39 @@ std::vector<CFigure*> MyStorage::GetSelectedAll() {
     return SelectedFigures;
 }
 
+void MyStorage::ApplyTreeSelection(const std::vector<CFigure*>& sel)
+{
+    DelSelection();
 
+    for (auto* a : arrows) {
+        if (a) a->SetSelA(false);
+    }
+
+    SelectedFigures.clear();
+
+    for (size_t i = 0; i < sel.size(); ++i) {
+        CFigure* f = sel[i];
+        if (!f) continue;
+
+        if (f->GetInGroup()) continue;
+
+        bool alreadyAdded = false;
+        for (size_t j = 0; j < SelectedFigures.size(); ++j) {
+            if (SelectedFigures[j] == f) {
+                alreadyAdded = true;
+                break;
+            }
+        }
+
+        if (!alreadyAdded) {
+            f->SetSel(true);
+            SelectedFigures.push_back(f);
+        }
+    }
+
+    lastEvent = StorageEvent::SelectionChanged;
+    notify();
+}
 
 
 

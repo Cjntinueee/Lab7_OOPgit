@@ -57,6 +57,7 @@ public:
 
     StorageEvent lastEvent = StorageEvent::None;
     StorageEvent GetLastEvent() const { return lastEvent; }
+    void ApplyTreeSelection(const std::vector<CFigure*>& sel);
 
     void AddArrow(CFigure* a, CFigure* b);
     std::vector<CFigure*> GetSelectedAll();

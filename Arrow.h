@@ -69,7 +69,7 @@ public:
 
     void SetViewport(int w, int h) { winW = w; winH = h; }
 
-    QString TypeA() const { return "AR"; }
+    //QString TypeA() const { return "AR"; }
 
     //void MoveA(int, int, int, int, bool = true, int = 0){}
 

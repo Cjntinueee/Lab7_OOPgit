@@ -22,7 +22,7 @@ public:
     int Width() override;
     int Height() override;
 
-    QString Type() const override { return "E"; }
+    QString Type() const override { return "Ellipse"; }
     void save(std::ostream& out) const override;
     void load(std::istream& in, CFactory* factory) override;
 };

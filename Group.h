@@ -30,7 +30,7 @@ public:
     int GetCountG();
     CFigure* GetFigure(int i);
 
-    QString Type() const override { return "G"; }
+    QString Type() const override { return "Group"; }
     void save(std::ostream& out) const override;
     void load(std::istream& in, CFactory* factory) override;
 

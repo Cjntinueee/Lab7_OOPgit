@@ -44,8 +44,6 @@ private slots:
     void on_spinBox_editingFinished();
     void onTreeObjSel(CFigure* obj);
 
-
-
     void on_pushButton_load_clicked();
 
     void on_pushButton_save_clicked();
@@ -55,6 +53,7 @@ private slots:
     void on_pushButton_un_gr_clicked();
 
     void on_pushButton_clicked();
+    //void onObjsSelected(const std::vector<CFigure*>& objs);
 
 private:
     Ui::MainWindow *ui;

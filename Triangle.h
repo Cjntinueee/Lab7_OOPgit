@@ -25,7 +25,7 @@ public:
     int Width() override;
     int Height() override;
 
-    QString Type() const override { return "T"; }
+    QString Type() const override { return "Triangle"; }
     void save(std::ostream& out) const override;
     void load(std::istream& in, CFactory* factory) override;
 };

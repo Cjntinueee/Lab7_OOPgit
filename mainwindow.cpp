@@ -22,7 +22,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->spinBox->setMaximum(1000);
 
     ui->treeWidget->setStorage(&storage);
-    //ui->spinBox->setFocusPolicy(Qt::NoFocus);
+    //connect(ui->treeWidget, &CTreeView::objsSelected,
+            //this, &MainWindow::onObjsSelected);
 
     connect(ui->treeWidget, &CTreeView::objSelected,
             this, &MainWindow::onTreeObjSel);
@@ -33,7 +34,13 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
-
+/*
+void MainWindow::onObjsSelected(const std::vector<CFigure*>& objs)
+{
+    storage.ApplyTreeSelection(objs);
+    update();
+}
+*/
 void MainWindow::onTreeObjSel(CFigure* obj)
 {
     storage.SelectOnly(obj);
