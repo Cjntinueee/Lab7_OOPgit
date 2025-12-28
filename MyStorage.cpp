@@ -25,12 +25,44 @@ MyStorage::~MyStorage()
     figure = nullptr;
 }
 
+
+
 void MyStorage::Add(CFigure* C)
 {
     figure[count++] = C;
     lastEvent = StorageEvent::StructureChanged;
     notify();
 }
+
+
+
+void MyStorage::SelectOnly(CFigure* obj)
+{/*
+    if (obj && obj->GetInGroup()) obj = nullptr;
+    for (int i = 0; i < count; ++i) {
+        figure[i]->SetSel(false);
+    }
+
+    if (obj) {
+        obj->SetSel(true);
+    }*/
+    if (obj && obj->GetInGroup()) obj = nullptr;
+
+    for (int i = 0; i < count; ++i)
+        figure[i]->SetSel(false);
+
+    SelectedFigures.clear();
+
+    if (obj) {
+        obj->SetSel(true);
+        SelectedFigures.push_back(obj);
+    }
+
+    lastEvent = StorageEvent::SelectionChanged;
+    notify();
+}
+
+
 
 CFigure* MyStorage::Get(int ind)
 {
@@ -52,6 +84,12 @@ int MyStorage::GetCount()
     return count;
 }
 
+std::vector<CFigure*> MyStorage::GetSelectedAll() {
+    return SelectedFigures;
+}
+
+
+
 void MyStorage::Del()
 {
     DelArr();
@@ -71,41 +109,6 @@ void MyStorage::Del()
     notify();
 }
 
-void MyStorage::DelArr(){
-    std::vector<CFigure*> toDel;
-    for (int i = 0; i < count; i++) {
-        if (figure[i] && figure[i]->Selected())
-            toDel.push_back(figure[i]);
-    }
-
-    for (auto it = arrows.begin(); it != arrows.end(); ) {
-        CArrow* ar = *it;
-
-        if (ar == nullptr) {
-            it = arrows.erase(it);
-            continue;
-        }
-
-        bool needDelete = false;
-
-        for (auto itF = toDel.begin(); itF != toDel.end(); ++itF) {
-            auto* f = *itF;
-            if (ar->Src() == f || ar->Dst() == f) {
-                needDelete = true;
-                break;
-            }
-        }
-
-        if (needDelete || ar->GetSelA()) {
-            delete ar;
-            it = arrows.erase(it);
-        } else {
-            ++it;
-        }
-    }
-}
-
-
 void MyStorage::DelSelection(){
     for (int j = 0; j < count; ++j) {
         if (auto *other = Get(j)) {
@@ -114,9 +117,48 @@ void MyStorage::DelSelection(){
     }
 }
 
+
+
+void MyStorage::Remove(CFigure* f, bool doDelete){
+    if (!f) return;
+
+    for (auto it = arrows.begin(); it != arrows.end(); ) {
+        CArrow* ar = *it;
+        if (!ar) { it = arrows.erase(it); continue; }
+
+        if (ar->Src() == f || ar->Dst() == f || ar->Selected()) {
+            delete ar;
+            it = arrows.erase(it);
+        } else {
+            ++it;
+        }
+    }
+
+    int newCount = 0;
+    for (int i = 0; i < count; ++i) {
+        if (figure[i] == f) {
+        } else {
+            figure[newCount++] = figure[i];
+        }
+    }
+    count = newCount;
+
+    for (auto it = SelectedFigures.begin(); it != SelectedFigures.end(); ) {
+        if (*it == f) it = SelectedFigures.erase(it);
+        else ++it;
+    }
+
+    if (doDelete) delete f;
+
+    lastEvent = StorageEvent::StructureChanged;
+    notify();
+}
+
+
+
 void MyStorage::Paint(QPainter *p){
     for (auto* ar : arrows) {
-        if (ar) ar->paintA(p);
+        if (ar) ar->paintt(p);
     }
 
     for (int i = 0; i < count; i++){
@@ -127,37 +169,27 @@ void MyStorage::Paint(QPainter *p){
     }
 }
 
-bool MyStorage::Click(int x, int y, bool ctrl){
-/*
-    for (int i = 0; i < count; i++){
-
-        CFigure* f = Get(i);
-        if (f->MouseIn(x, y)){
-            if (ctrl){
-                f->SetSel(!f->Selected());
-            } else{
-                DelSelection();
-                f->SetSel(true);
-            }
-            lastEvent = StorageEvent::SelectionChanged;
-            notify();
-            return true;
+void MyStorage::SetColorTo(QColor c) {
+    for (int i = 0; i < count; ++i) {
+        CFigure *f = Get(i);
+        if (f && f->Selected()) {
+            f->SetPen(c);
         }
-
     }
-    DelSelection();
-    //lastEvent = StorageEvent::SelectionChanged;
-    //notify();
-    return false;*/
+}
+
+
+
+bool MyStorage::Click(int x, int y, bool ctrl){
 
     for (int i = (int)arrows.size() - 1; i >= 0; --i) {
         CArrow* ar = arrows[i];
-        if (ar && ar->MouseInA(x, y)) {
-            if (ctrl) ar->SetSelA(!ar->GetSelA());
+        if (ar && ar->MouseIn(x, y)) {
+            if (ctrl) ar->SetSel(!ar->Selected());
             else {
                 DelSelection();
-                for (auto* a : arrows) if (a) a->SetSelA(false);
-                ar->SetSelA(true);
+                for (auto* a : arrows) if (a) a->SetSel(false);
+                ar->SetSel(true);
             }
             lastEvent = StorageEvent::SelectionChanged;
             notify();
@@ -184,13 +216,12 @@ bool MyStorage::Click(int x, int y, bool ctrl){
 
     }
     DelSelection();
-    for (auto* a : arrows) if (a) a->SetSelA(false);
+    for (auto* a : arrows) if (a) a->SetSel(false);
     SelectedFigures.clear();
     lastEvent = StorageEvent::SelectionChanged;
     notify();
     return false;
 }
-
 
 void MyStorage::Moving(int dx, int dy, int winW, int winH){
     int token = ++moveTokenCounter;
@@ -207,23 +238,12 @@ void MyStorage::Moving(int dx, int dy, int winW, int winH){
     }
 }
 
-
 void MyStorage::SizeCh(int size, int winW, int winH){
     for (int i = 0; i < count; i++){
 
         CFigure* f = Get(i);
         if (f->Selected()){
             f->SizeChange(size, winW, winH);
-        }
-    }
-}
-
-
-void MyStorage::SetColorTo(QColor c) {
-    for (int i = 0; i < count; ++i) {
-        CFigure *f = Get(i);
-        if (f && f->Selected()) {
-            f->SetPen(c);
         }
     }
 }
@@ -288,7 +308,10 @@ void MyStorage::UnGrouping(){
     notify();
 }
 
+
+
 bool MyStorage::Save(const std::string& s){
+    /*
     std::ofstream out(s);
     if (!out) return false;
 
@@ -311,11 +334,43 @@ bool MyStorage::Save(const std::string& s){
         out << aa << ' ' << bb << '\n';
     }
 
+    return true;*/
+
+    std::ofstream out(s);
+    if (!out) return false;
+
+    out << count << '\n';
+
+    for(int i = 0; i < count; i++){
+        if (!figure[i]) continue;
+        figure[i]->save(out);
+    }
+
+    out << arrows.size() << '\n';
+    for (auto* ar : arrows) {
+        if (!ar) {
+            out << -1 << ' ' << -1 << ' ' << 0 << '\n';
+            continue;
+        }
+        if (!ar->Src() || !ar->Dst()) {
+            out << -1 << ' ' << -1 << ' ' << ar->IsBidirectional() << '\n';
+            continue;
+        }
+        int aa = -1;
+        int bb = -1;
+
+        for (int i = 0; i < count; ++i) {
+            if (figure[i] == ar->Src()) aa = i;
+            if (figure[i] == ar->Dst()) bb = i;
+        }
+
+        out << aa << ' ' << bb << ' ' << ar->IsBidirectional() << '\n';
+    }
     return true;
 }
 
 bool MyStorage::Load(const std::string& s, CFactory* factory){
-    std::ifstream in(s);
+    /*std::ifstream in(s);
     if (!in) return false;
 
     int n;
@@ -352,75 +407,114 @@ bool MyStorage::Load(const std::string& s, CFactory* factory){
     }
 
 
+    return true;*/
+
+    std::ifstream in(s);
+    if (!in) return false;
+
+    int n;
+    in >> n;
+
+    for (int i = 0; i < count; ++i)
+        delete figure[i];
+    count = 0;
+
+    for (auto* ar : arrows)
+        delete ar;
+    arrows.clear();
+
+    for (int i = 0; i < n; ++i){
+        std::string type;
+        in >> type;
+
+        CFigure* obj = factory->create(type);
+
+        obj->load(in, factory);
+        Add(obj);
+    }
+
+    int na;
+    in >> na;
+
+    for (int i = 0; i < na; ++i){
+        int aa, bb;
+        bool bid;
+        in >> aa >> bb >> bid;
+
+        if (aa >= 0 && aa < count && bb >= 0 && bb < count) {
+            arrows.push_back(new CArrow(figure[aa], figure[bb], bid));
+        }
+    }
+
+
     return true;
 }
 
 
-void MyStorage::SelectOnly(CFigure* obj)
-{
-    if (obj && obj->GetInGroup()) obj = nullptr;
-    for (int i = 0; i < count; ++i) {
-        figure[i]->SetSel(false);
-    }
 
-    if (obj) {
-        obj->SetSel(true);
-    }
-
-    //lastEvent = StorageEvent::SelectionChanged;
-    //notify();
-}
-
-
-void MyStorage::AddArrow(CFigure* a, CFigure* b)
-{
+void MyStorage::AddArrow(CFigure* a, CFigure* b, bool bid) {
+    /*
     if (!a || !b || a == b) return;
 
     auto* ar = new CArrow(a, b);
     arrows.push_back(ar);
 
     lastEvent = StorageEvent::StructureChanged;
+    notify();*/
+    if (!a || !b || a == b) return;
+    auto* ar = new CArrow(a, b, bid);
+    arrows.push_back(ar);
+    lastEvent = StorageEvent::StructureChanged;
     notify();
 }
 
 
-std::vector<CFigure*> MyStorage::GetSelectedAll() {
-    return SelectedFigures;
-}
 
-void MyStorage::ApplyTreeSelection(const std::vector<CFigure*>& sel)
-{
-    DelSelection();
-
-    for (auto* a : arrows) {
-        if (a) a->SetSelA(false);
+void MyStorage::DelArr(){
+    std::vector<CFigure*> toDel;
+    for (int i = 0; i < count; i++) {
+        if (figure[i] && figure[i]->Selected())
+            toDel.push_back(figure[i]);
     }
 
-    SelectedFigures.clear();
+    for (auto it = arrows.begin(); it != arrows.end(); ) {
+        CArrow* ar = *it;
 
-    for (size_t i = 0; i < sel.size(); ++i) {
-        CFigure* f = sel[i];
-        if (!f) continue;
+        if (ar == nullptr) {
+            it = arrows.erase(it);
+            continue;
+        }
 
-        if (f->GetInGroup()) continue;
+        bool needDelete = false;
 
-        bool alreadyAdded = false;
-        for (size_t j = 0; j < SelectedFigures.size(); ++j) {
-            if (SelectedFigures[j] == f) {
-                alreadyAdded = true;
+        for (auto itF = toDel.begin(); itF != toDel.end(); ++itF) {
+            auto* f = *itF;
+            if (ar->Src() == f || ar->Dst() == f) {
+                needDelete = true;
                 break;
             }
         }
 
-        if (!alreadyAdded) {
-            f->SetSel(true);
-            SelectedFigures.push_back(f);
+        if (needDelete || ar->Selected()) {
+            delete ar;
+            it = arrows.erase(it);
+        } else {
+            ++it;
         }
     }
-
-    lastEvent = StorageEvent::SelectionChanged;
-    notify();
 }
 
+void MyStorage::RemoveArrow(CArrow* ar) {
+    if (!ar) return;
+    for (auto it = arrows.begin(); it != arrows.end(); ++it) {
+        if (*it == ar) {
+            delete ar;
+            arrows.erase(it);
+            lastEvent = StorageEvent::StructureChanged;
+            notify();
+            return;
+        }
+    }
+}
 
 

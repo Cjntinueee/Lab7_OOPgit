@@ -22,8 +22,6 @@ MainWindow::MainWindow(QWidget *parent)
     ui->spinBox->setMaximum(1000);
 
     ui->treeWidget->setStorage(&storage);
-    //connect(ui->treeWidget, &CTreeView::objsSelected,
-            //this, &MainWindow::onObjsSelected);
 
     connect(ui->treeWidget, &CTreeView::objSelected,
             this, &MainWindow::onTreeObjSel);
@@ -34,13 +32,7 @@ MainWindow::~MainWindow()
 {
     delete ui;
 }
-/*
-void MainWindow::onObjsSelected(const std::vector<CFigure*>& objs)
-{
-    storage.ApplyTreeSelection(objs);
-    update();
-}
-*/
+
 void MainWindow::onTreeObjSel(CFigure* obj)
 {
     storage.SelectOnly(obj);
@@ -54,11 +46,6 @@ void MainWindow::mousePressEvent(QMouseEvent *event){
         return;
     }
 
-
-    if (isClickOnUi(event->pos())) {
-        QMainWindow::mousePressEvent(event);
-        return;
-    }
 
     const bool ctrl = (event->modifiers() & Qt::ControlModifier);
     bool hit = storage.Click(event->pos().x(), event->pos().y(), ctrl);
@@ -74,7 +61,31 @@ void MainWindow::mousePressEvent(QMouseEvent *event){
         selectEnd = event->pos();
     }
 
-    update();
+    update();/*
+    if (event->button() != Qt::LeftButton){
+        QMainWindow::mousePressEvent(event);
+        return;
+    }
+
+
+    const bool ctrl = (event->modifiers() & Qt::ControlModifier);
+    bool hit = storage.Click(event->pos().x(), event->pos().y(), ctrl);
+
+    if (hit) {
+        isDragging = true;
+        isSelecting = false;
+        lastpos = event->pos();
+        dragLastPos = event->pos();
+        dragTotalDx = 0;
+        dragTotalDy = 0;
+    } else {
+        isSelecting = true;
+        isDragging = false;
+        selectStart = event->pos();
+        selectEnd = event->pos();
+    }
+
+    update();*/
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent *event) {
@@ -83,13 +94,28 @@ void MainWindow::mouseMoveEvent(QMouseEvent *event) {
         int dx = event->pos().x() - lastpos.x();
         int dy = event->pos().y() - lastpos.y();
 
-        storage.Moving(dx, dy, width(), height());
+        int token = storage.NextMoveToken();
+        cmdMgr.execute(new CMoveCommand(&storage, dx, dy, width(), height(), token));
         lastpos = event->pos();
         update();
     } else if (isSelecting) {
         selectEnd = event->pos();
         update();
-    }
+    }/*
+    if (isDragging && (event->buttons() & Qt::LeftButton)) {
+        int dx = event->pos().x() - dragLastPos.x();
+        int dy = event->pos().y() - dragLastPos.y();
+
+        storage.Moving(dx, dy, width(), height());
+
+        dragTotalDx += dx;
+        dragTotalDy += dy;
+        dragLastPos = event->pos();
+        update();
+    }else if (isSelecting) {
+        selectEnd = event->pos();
+        update();
+    }*/
 }
 
 void MainWindow::mouseReleaseEvent(QMouseEvent *event) {
@@ -99,14 +125,17 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event) {
     if (event->button() != Qt::LeftButton)
         return;
 
-    if (isClickOnUi(event->pos())) {
-        QMainWindow::mouseReleaseEvent(event);
-        return;
-    }
-
     if (isDragging) {
+
         isDragging = false;
         return;
+        /*isDragging = false;
+
+        if (dragTotalDx != 0 || dragTotalDy != 0) {
+            cmdMgr.execute(new CMoveCommand(&storage, dragTotalDx, dragTotalDy, width(), height()));
+        }
+        update();
+        return;*/
     }
 
     if (isSelecting) {
@@ -145,11 +174,11 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event) {
             if (shift){
                 auto *c = new CEllipse(selectStart.x(), selectStart.y(), rad, rad);
                 c->SetPen(curcolp);
-                storage.Add(c);
+                cmdMgr.execute(new CAddCommand(c, &storage));
             } else{
                 auto *ce = new CEllipse(selectStart.x(), selectStart.y(), w / 2, h / 2);
                 ce->SetPen(curcolp);
-                storage.Add(ce);
+                cmdMgr.execute(new CAddCommand(ce, &storage));
             }
             break;
         }
@@ -160,18 +189,18 @@ void MainWindow::mouseReleaseEvent(QMouseEvent *event) {
             if (shift){
                 auto *cs = new CRect(selectStart.x(), selectStart.y(), side, side);
                 cs->SetPen(curcolp);
-                storage.Add(cs);
+                cmdMgr.execute(new CAddCommand(cs, &storage));
             } else{
                 auto *cr = new CRect(selectStart.x(), selectStart.y(), w, h);
                 cr->SetPen(curcolp);
-                storage.Add(cr);
+                cmdMgr.execute(new CAddCommand(cr, &storage));
             }
             break;
         }
         case F_TRI: {
             CTriangle *t = new CTriangle(selectStart, selectEnd);
             t->SetPen(curcolp);
-            storage.Add(t);
+            cmdMgr.execute(new CAddCommand(t, &storage));
             break;
         }
         }
@@ -201,26 +230,37 @@ void MainWindow::paintEvent(QPaintEvent *event){
 
 void MainWindow::keyPressEvent(QKeyEvent *event){
     if (event->key() == Qt::Key_Delete){
-        storage.Del();
+        cmdMgr.execute(new CDeleteCommand(&storage));
         update();
     }
-
+/*
     if (event->key() == Qt::Key_G){
-        storage.Grouping();
+        cmdMgr.execute(new CGroupCommand(&storage));
         update();
     }
 
     if (event->key() == Qt::Key_U){
         storage.UnGrouping();
         update();
-    }
-    if (event->key() == Qt::Key_A) {
+    }    if (event->key() == Qt::Key_A) {
         auto sel = storage.GetSelectedAll();
         if (sel.size() == 2) {
             storage.AddArrow(sel[0], sel[1]);
             update();
         }
+    }*/
+    if ((event->modifiers() & Qt::ControlModifier) && event->key() == Qt::Key_Z) {
+        cmdMgr.undo();
+        update();
+        return;
     }
+
+    if ((event->modifiers() & Qt::ControlModifier) && event->key() == Qt::Key_Y) {
+        cmdMgr.redo();
+        update();
+        return;
+    }
+
 }
 
 
@@ -303,25 +343,10 @@ void MainWindow::on_pushButton_load_clicked()
 }
 
 
-bool MainWindow::isClickOnUi(QPoint p) const
-{
-    QWidget* w = childAt(p);
-    if (!w) return false;
-
-    if (w == ui->treeWidget) return true;
-
-    if (ui->treeWidget->isAncestorOf(w)) return true;
-
-    if (qobject_cast<QAbstractButton*>(w)) return true;
-    if (qobject_cast<QSpinBox*>(w) || qobject_cast<QAbstractSpinBox*>(w)) return true;
-
-    return false;
-}
-
 
 void MainWindow::on_pushButton_gr_clicked()
 {
-    storage.Grouping();
+    cmdMgr.execute(new CGroupCommand(&storage));
     update();
 }
 
@@ -337,7 +362,17 @@ void MainWindow::on_pushButton_clicked()
 {
     auto sel = storage.GetSelectedAll();
     if (sel.size() == 2) {
-        storage.AddArrow(sel[0], sel[1]);
+        storage.AddArrow(sel[0], sel[1], false);
+        update();
+    }
+}
+
+
+void MainWindow::on_pushButton_2_clicked()
+{
+    auto sel = storage.GetSelectedAll();
+    if (sel.size() == 2) {
+        storage.AddArrow(sel[0], sel[1], true);
         update();
     }
 }

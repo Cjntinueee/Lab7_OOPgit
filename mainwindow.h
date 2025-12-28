@@ -13,6 +13,12 @@
 #include <Triangle.h>
 #include <ConcrFactory.h>
 #include <TreeView.h>
+#include <CommandManager.h>
+#include <Command.h>
+#include <AddCommand.h>
+#include <DeleteCommand.h>
+#include <MoveCommand.h>
+#include <GroupCommand.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -47,13 +53,13 @@ private slots:
     void on_pushButton_load_clicked();
 
     void on_pushButton_save_clicked();
-    bool isClickOnUi(QPoint p) const;
 
     void on_pushButton_gr_clicked();
     void on_pushButton_un_gr_clicked();
 
     void on_pushButton_clicked();
-    //void onObjsSelected(const std::vector<CFigure*>& objs);
+
+    void on_pushButton_2_clicked();
 
 private:
     Ui::MainWindow *ui;
@@ -83,5 +89,12 @@ private:
     QColor curcolp = Qt::white;
 
     ConcrFactory factory;
+
+    CCommandManager cmdMgr;
+
+    QPoint dragStartPos;
+    QPoint dragLastPos;
+    int dragTotalDx = 0;
+    int dragTotalDy = 0;
 };
 #endif // MAINWINDOW_H

@@ -25,29 +25,31 @@ public:
     ~MyStorage();
 
     void Add(CFigure* C);
+
+    void SelectOnly(CFigure* obj);
+
     CFigure* Get(int ind);
     CFigure* GetSelected();
-
     int GetCount();
+    std::vector<CFigure*> GetSelectedAll();
 
     void Del();
     void DelSelection();
 
+    void Remove(CFigure* f, bool doDelete);
+
     void Paint(QPainter *p);
+    void SetColorTo(QColor c);
+
     bool Click(int x, int y, bool ctrl);
     void Moving(int dx, int dy, int winW, int winH);
-
     void SizeCh(int size, int winW, int winH);
-
-    void SetColorTo(QColor c);
 
     void Grouping();
     void UnGrouping();
 
     bool Save(const std::string& s);
     bool Load(const std::string& s, CFactory* factory);
-
-    void SelectOnly(CFigure* obj);
 
     enum class StorageEvent {
         None,
@@ -57,12 +59,14 @@ public:
 
     StorageEvent lastEvent = StorageEvent::None;
     StorageEvent GetLastEvent() const { return lastEvent; }
-    void ApplyTreeSelection(const std::vector<CFigure*>& sel);
 
-    void AddArrow(CFigure* a, CFigure* b);
-    std::vector<CFigure*> GetSelectedAll();
+    void AddArrow(CFigure* a, CFigure* b, bool bid);
+
     void DelArr();
+    int NextMoveToken() { return ++moveTokenCounter; }
 
+    const std::vector<CArrow*>& GetArrows() const { return arrows; }
+    void RemoveArrow(CArrow* ar);
 };
 
 #endif // MYSTORAGE_H
