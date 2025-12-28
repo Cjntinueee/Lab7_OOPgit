@@ -18,6 +18,16 @@ private:
     int moveTokenCounter = 0;
 
     std::vector<CFigure*> SelectedFigures;
+
+    std::vector<CFigure*> clipboard;
+
+    struct ArrowClip {
+        int a;
+        int b;
+        bool bid;
+    };
+    std::vector<ArrowClip> arrowClipboard;
+
 public:
 
     MyStorage();
@@ -67,6 +77,27 @@ public:
 
     const std::vector<CArrow*>& GetArrows() const { return arrows; }
     void RemoveArrow(CArrow* ar);
+
+    bool Contains(CFigure* f) const;
+
+    void Copy();
+    void Cut();
+    //void Paste(int dx = 20, int dy = 20);
+
+    Group* UnGroupSelectedAndTake();
+    void InsertFigure(CFigure* f);
+
+    CFigure* FindById(int id) const;
+    void InsertAt(int index, CFigure* f);
+    int IndexOf(CFigure* f) const;
+
+    std::vector<CFigure*> Paste(int dx, int dy, int winW, int winH);
+    void DetachNoArrows(CFigure* f);
+
+    void SetPenWidthTo(int w);
+
+    void SetPenColorToSelected(const QColor& c);
+    void SetPenWidthToSelected(int w);
 };
 
 #endif // MYSTORAGE_H

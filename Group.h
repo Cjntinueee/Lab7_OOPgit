@@ -19,8 +19,8 @@ public:
     void paintt(QPainter *p) override;
     void SetPen(QColor c) override;
 
-    int Width() override;
-    int Height() override;
+    int Width() const override;
+    int Height() const override;
 
     bool MouseIn(int x, int y) override;
     void Move(int dx, int dy, int winW, int winH, bool notifyObs = true, int token = 0) override;
@@ -35,6 +35,9 @@ public:
     void load(std::istream& in, CFactory* factory) override;
 
     CFigure* FigureAt(int i) const;
+
+    CFigure* clone() const override;
+    void ClearWithoutDeletingChildren() { countG = 0;}
 };
 
 #endif // GROUP_H

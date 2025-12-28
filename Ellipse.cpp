@@ -21,10 +21,10 @@ CEllipse::CEllipse(int x, int y, int rad1, int rad2){
 void CEllipse::paintt(QPainter *p){
 
     if (this->Selected()){
-        p->setPen(QPen(colorP));
+        p->setPen(pen);
         p->setBrush(QBrush(QColor(0, 120, 215, 60)));
     } else {
-        p->setPen(QPen(colorP));
+        p->setPen(pen);
         p->setBrush(QBrush(Qt::transparent));
     }
 
@@ -48,11 +48,11 @@ void CEllipse::SizeChange(int rad, int winW, int winH){
     ScreenIns(winW, winH);
 }
 
-int CEllipse::Width(){
+int CEllipse::Width() const{
     return 2*rad1;
 }
 
-int CEllipse::Height(){
+int CEllipse::Height() const{
     return 2*rad2;
 }
 
@@ -75,9 +75,47 @@ void CEllipse::load(std::istream& in, CFactory* factory) {
 }
 
 
+CFigure* CEllipse::clone() const {
+    auto* e = new CEllipse(*this);
+    e->SetSel(false);
+    e->SetInGroup(false);
+    return e;
+}
 
+int CEllipse::propCount() const {
+    return CFigure::BasePropCount + 2;
+}
 
+PropMeta CEllipse::propMeta(int idx) const {
+    if (idx < CFigure::BasePropCount) return CFigure::propMeta(idx);
 
+    PropMeta m;
+    int j = idx - CFigure::BasePropCount;
+    if (j == 0) { m.name="RadX"; m.type=PropMeta::Type::Int; m.editable=true; m.minInt=1; m.maxInt=10000; }
+    if (j == 1) { m.name="RadY"; m.type=PropMeta::Type::Int; m.editable=true; m.minInt=1; m.maxInt=10000; }
+    return m;
+}
+
+QVariant CEllipse::getProp(int idx) const {
+    if (idx < CFigure::BasePropCount) return CFigure::getProp(idx);
+
+    int j = idx - CFigure::BasePropCount;
+    if (j == 0) return QVariant(GetRad1());
+    if (j == 1) return QVariant(GetRad2());
+    return {};
+}
+
+bool CEllipse::setProp(int idx, const QVariant& v) {
+    if (idx < CFigure::BasePropCount) return CFigure::setProp(idx, v);
+
+    int j = idx - CFigure::BasePropCount;
+    int val = v.toInt();
+    if (val < 1) val = 1;
+
+    if (j == 0) { SetRad1(val); return true; }
+    if (j == 1) { SetRad2(val); return true; }
+    return false;
+}
 
 
 

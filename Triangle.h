@@ -22,12 +22,14 @@ public:
     void SizeChange(int size, int winW, int winH) override;
 
     void Move(int dx, int dy, int winW, int winH, bool notifyObs = true, int token = 0) override;
-    int Width() override;
-    int Height() override;
+    int Width() const override;
+    int Height() const override;
 
     QString Type() const override { return "Triangle"; }
     void save(std::ostream& out) const override;
     void load(std::istream& in, CFactory* factory) override;
+
+    CFigure* clone() const override;
 };
 
 

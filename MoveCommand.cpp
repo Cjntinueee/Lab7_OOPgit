@@ -11,12 +11,20 @@ CMoveCommand::CMoveCommand(MyStorage* s, int dx, int dy, int w, int h, int t) {
 }
 
 void CMoveCommand::execute() {
+    /*
     if (!_storage) return;
     //if (firstExecute) { firstExecute = false; return; }
     targets = _storage->GetSelectedAll();
     for (auto* f : targets) {
         f->Move(_dx, _dy, winW, winH, true, token);
-    }
+    }*/
+    if (!_storage) return;
+
+    if (targets.empty())
+        targets = _storage->GetSelectedAll();
+
+    for (auto* f : targets)
+        if (f) f->Move(_dx, _dy, winW, winH, true, token);
 }
 
 void CMoveCommand::unexecute() {

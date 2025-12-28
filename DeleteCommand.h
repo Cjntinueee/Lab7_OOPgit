@@ -15,6 +15,8 @@ private:
         bool bid;
     };
     std::vector<RemovedArrowInfo> removedArrows;
+
+    bool captured = false;
 public:
     CDeleteCommand(MyStorage* storage);
     void execute() override;

@@ -26,6 +26,16 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ui->treeWidget, &CTreeView::objSelected,
             this, &MainWindow::onTreeObjSel);
 
+    props = new PropertiesPanel(this);
+
+    ui->verticalLayoutProps->addWidget(props);
+
+    connect(props, &PropertiesPanel::edited,
+            this, &MainWindow::onPropsEdited);
+
+    connect(props, &PropertiesPanel::requestSelectChanged,
+            this, &MainWindow::onPropsSelectedChanged);
+
 }
 
 MainWindow::~MainWindow()
@@ -33,14 +43,34 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::onPropsSelectedChanged(bool selected)
+{
+    if (!currentFig) return;
+
+    if (selected) {
+        storage.SelectOnly(currentFig);
+    } else {
+        storage.DelSelection();
+    }
+
+    syncProps(true);
+    update();
+}
+
 void MainWindow::onTreeObjSel(CFigure* obj)
 {
+    //storage.SelectOnly(obj);
+    //update();
     storage.SelectOnly(obj);
+    //currentFig = obj;
+    //updatePropsPanel();
+    //props->setObject(currentFig);
+    syncProps(true);
     update();
 }
 
 void MainWindow::mousePressEvent(QMouseEvent *event){
-
+/*
     if (event->button() != Qt::LeftButton){
         QMainWindow::mousePressEvent(event);
         return;
@@ -49,7 +79,6 @@ void MainWindow::mousePressEvent(QMouseEvent *event){
 
     const bool ctrl = (event->modifiers() & Qt::ControlModifier);
     bool hit = storage.Click(event->pos().x(), event->pos().y(), ctrl);
-
     if (hit) {
         isDragging = true;
         isSelecting = false;
@@ -60,8 +89,14 @@ void MainWindow::mousePressEvent(QMouseEvent *event){
         selectStart = event->pos();
         selectEnd = event->pos();
     }
+    //
+    auto sel = storage.GetSelectedAll();
+    currentFig = (sel.size() == 1 ? sel[0] : nullptr);
+    props->setObject(currentFig);
+    //updatePropsPanel();
+    //
 
-    update();/*
+    update();*//*
     if (event->button() != Qt::LeftButton){
         QMainWindow::mousePressEvent(event);
         return;
@@ -86,6 +121,29 @@ void MainWindow::mousePressEvent(QMouseEvent *event){
     }
 
     update();*/
+
+    if (event->button() != Qt::LeftButton){
+        QMainWindow::mousePressEvent(event);
+        return;
+    }
+
+    const bool ctrl = (event->modifiers() & Qt::ControlModifier);
+    bool hit = storage.Click(event->pos().x(), event->pos().y(), ctrl);
+
+    syncProps(true);
+
+    if (hit) {
+        isDragging = true;
+        isSelecting = false;
+        lastpos = event->pos();
+    } else {
+        isSelecting = true;
+        isDragging = false;
+        selectStart = event->pos();
+        selectEnd = event->pos();
+    }
+
+    update();
 }
 
 void MainWindow::mouseMoveEvent(QMouseEvent *event) {
@@ -231,6 +289,7 @@ void MainWindow::paintEvent(QPaintEvent *event){
 void MainWindow::keyPressEvent(QKeyEvent *event){
     if (event->key() == Qt::Key_Delete){
         cmdMgr.execute(new CDeleteCommand(&storage));
+        //updatePropsPanel();
         update();
     }
 /*
@@ -251,12 +310,40 @@ void MainWindow::keyPressEvent(QKeyEvent *event){
     }*/
     if ((event->modifiers() & Qt::ControlModifier) && event->key() == Qt::Key_Z) {
         cmdMgr.undo();
+        syncProps(true);
+        //updatePropsPanel();
         update();
         return;
     }
 
     if ((event->modifiers() & Qt::ControlModifier) && event->key() == Qt::Key_Y) {
         cmdMgr.redo();
+        syncProps(true);
+        //updatePropsPanel();
+        update();
+        return;
+    }
+    if ((event->modifiers() & Qt::ControlModifier) && event->key() == Qt::Key_C) {
+        storage.Copy();
+        syncProps(true);
+        //updatePropsPanel();
+        return;
+    }
+
+    if ((event->modifiers() & Qt::ControlModifier) && event->key() == Qt::Key_X) {
+        storage.Copy();
+        cmdMgr.execute(new CDeleteCommand(&storage));
+        syncProps(true);
+        //updatePropsPanel();
+        update();
+        return;
+    }
+
+    if ((event->modifiers() & Qt::ControlModifier) && event->key() == Qt::Key_V) {
+        //cmdMgr.execute(new CPasteCommand(&storage, 20, 20, width(), height()));
+        storage.Paste(20, 20, width(), height());
+        syncProps(true);
+        //updatePropsPanel();
         update();
         return;
     }
@@ -322,6 +409,7 @@ void MainWindow::on_pushButton_save_clicked()
         return;
 
     storage.Save(fileName.toStdString());
+    syncProps(true);
 }
 
 
@@ -339,6 +427,7 @@ void MainWindow::on_pushButton_load_clicked()
         return;
 
     storage.Load(fileName.toStdString(), &factory);
+    syncProps(true);
     update();
 }
 
@@ -347,12 +436,16 @@ void MainWindow::on_pushButton_load_clicked()
 void MainWindow::on_pushButton_gr_clicked()
 {
     cmdMgr.execute(new CGroupCommand(&storage));
+    //updatePropsPanel();
+    syncProps(true);
     update();
 }
 
 void MainWindow::on_pushButton_un_gr_clicked()
 {
-    storage.UnGrouping();
+    cmdMgr.execute(new CUnGroupCommand(&storage));
+    //updatePropsPanel();
+    syncProps(true);
     update();
 }
 
@@ -363,6 +456,7 @@ void MainWindow::on_pushButton_clicked()
     auto sel = storage.GetSelectedAll();
     if (sel.size() == 2) {
         storage.AddArrow(sel[0], sel[1], false);
+        syncProps(true);
         update();
     }
 }
@@ -373,7 +467,45 @@ void MainWindow::on_pushButton_2_clicked()
     auto sel = storage.GetSelectedAll();
     if (sel.size() == 2) {
         storage.AddArrow(sel[0], sel[1], true);
+        syncProps(true);
         update();
     }
 }
 
+
+void MainWindow::syncProps(bool keepLastIfNone)
+{/*
+    auto sel = storage.GetSelectedAll();
+
+    if (sel.size() == 1) {
+        currentFig = sel[0];
+        props->setObject(currentFig);
+        return;
+    }
+
+    if (sel.empty()) {
+        if (!keepLastIfNone) {
+            currentFig = nullptr;
+            props->setObject(nullptr);
+        }
+        // keepLastIfNone==true -> оставляем как есть (панель показывает последний объект)
+        return;
+    }*/
+    auto sel = storage.GetSelectedAll();
+
+    if (sel.size() == 1) {
+        currentFig = sel[0];
+        props->setObject(currentFig);
+        return;
+    }
+
+    if (sel.empty()) {
+        currentFig = nullptr;
+        props->setObject(nullptr);
+        return;
+    }
+
+    currentFig = nullptr;
+    props->setObject(nullptr);
+
+}

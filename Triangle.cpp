@@ -121,7 +121,7 @@ void CTriangle::Move(int dx, int dy, int winW, int winH, bool notifyObs, int tok
 }
 
 
-int CTriangle::Width()
+int CTriangle::Width() const
 {
     int minX = a.x();
     int maxX = a.x();
@@ -135,7 +135,7 @@ int CTriangle::Width()
     return maxX - minX;
 }
 
-int CTriangle::Height()
+int CTriangle::Height() const
 {
     int minY = a.y();
     int maxY = a.y();
@@ -175,4 +175,14 @@ void CTriangle::load(std::istream& in, CFactory* factory) {
 
     colorP = QColor(r, g, bcol);
     select = false;
+}
+
+
+
+
+CFigure* CTriangle::clone() const {
+    auto* e = new CTriangle(*this);
+    e->SetSel(false);
+    e->SetInGroup(false);
+    return e;
 }

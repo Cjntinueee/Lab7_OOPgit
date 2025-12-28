@@ -50,7 +50,7 @@ void Group::paintt(QPainter *p){
 }
 
 
-int Group::Width()
+int Group::Width() const
 {
     if (countG == 0 || group[0] == nullptr)
         return 0;
@@ -70,7 +70,7 @@ int Group::Width()
     return maxX - minX;
 }
 
-int Group::Height()
+int Group::Height() const
 {
     if (countG == 0 || group[0] == nullptr)
         return 0;
@@ -216,7 +216,18 @@ CFigure* Group::FigureAt(int i) const {
     return group[i];
 }
 
+CFigure* Group::clone() const {
+    auto* g = new Group(countG);
 
+    for (int i = 0; i < countG; ++i) {
+        CFigure* child = FigureAt(i)->clone();
+        child->SetInGroup(true);
+        g->addtoGr(child);
+    }
+
+    g->SetSel(false);
+    return g;
+}
 
 
 

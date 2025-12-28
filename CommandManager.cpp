@@ -22,8 +22,9 @@ void CCommandManager::undo(){
     _undo.pop();
     cmd->unexecute();
     //history.push_back("UNDO: " + cmd->name());
-    _redo.push(cmd);
     std::cout << "[UNDO] " << cmd->name() << std::endl;
+    _redo.push(cmd);
+
 }
 void CCommandManager::redo(){
     if (_redo.empty()) return;

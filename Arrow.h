@@ -49,5 +49,7 @@ public:
 
     void SetBidirectional(bool bid);
     bool IsBidirectional() const { return bidirectional; }
+
+    CFigure* clone() const override {}
 };
 #endif // ARROW_H

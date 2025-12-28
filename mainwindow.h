@@ -19,6 +19,8 @@
 #include <DeleteCommand.h>
 #include <MoveCommand.h>
 #include <GroupCommand.h>
+#include <UnGroupCommand.h>
+#include <PropertiesPanel.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -60,6 +62,16 @@ private slots:
     void on_pushButton_clicked();
 
     void on_pushButton_2_clicked();
+    void onPropsSelectedChanged(bool selected);
+
+    void onPropsEdited() { update();}
+
+    //void updatePropsPanel();
+
+    //void on_btnFigColor_clicked();
+    //void on_sbPenWidth_valueChanged(int v);
+    //void on_sbFigSize_editingFinished();
+    //void on_checkBox_sel_stateChanged(int st);
 
 private:
     Ui::MainWindow *ui;
@@ -96,5 +108,12 @@ private:
     QPoint dragLastPos;
     int dragTotalDx = 0;
     int dragTotalDy = 0;
+
+    CFigure* currentFig = nullptr;
+    bool fillingProps = false;
+
+    PropertiesPanel* props = nullptr;
+
+    void syncProps(bool keepLastIfNone = true);
 };
 #endif // MAINWINDOW_H

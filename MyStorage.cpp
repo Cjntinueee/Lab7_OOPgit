@@ -115,6 +115,9 @@ void MyStorage::DelSelection(){
             other->ClearSel();
         }
     }
+    SelectedFigures.clear();
+    lastEvent = StorageEvent::SelectionChanged;
+    notify();
 }
 
 
@@ -201,8 +204,18 @@ bool MyStorage::Click(int x, int y, bool ctrl){
         CFigure* f = Get(i);
         if (f->MouseIn(x, y)){
             if (ctrl){
+                /*
                 f->SetSel(!f->Selected());
-                SelectedFigures.push_back(f);
+                SelectedFigures.push_back(f);*/
+                bool newState = !f->Selected();
+                f->SetSel(newState);
+
+                auto it = std::find(SelectedFigures.begin(), SelectedFigures.end(), f);
+                if (newState) {
+                    if (it == SelectedFigures.end()) SelectedFigures.push_back(f);
+                } else {
+                    if (it != SelectedFigures.end()) SelectedFigures.erase(it);
+                }
             } else{
                 DelSelection();
                 SelectedFigures.clear();
@@ -517,4 +530,245 @@ void MyStorage::RemoveArrow(CArrow* ar) {
     }
 }
 
+bool MyStorage::Contains(CFigure* f) const {
+    for (int i = 0; i < count; ++i)
+        if (figure[i] == f) return true;
+    return false;
+}
 
+
+void MyStorage::InsertFigure(CFigure* f) {
+    if (!f) return;
+    figure[count++] = f;
+    lastEvent = StorageEvent::StructureChanged;
+    notify();
+}
+
+Group* MyStorage::UnGroupSelectedAndTake()
+{
+    for (int i = 0; i < count; ++i) {
+        Group* g = dynamic_cast<Group*>(figure[i]);
+        if (!g || !g->Selected()) continue;
+
+        DelArr();
+
+        int cnt = g->GetCountG();
+
+        for (int j = i; j < count - 1; ++j)
+            figure[j] = figure[j + 1];
+        --count;
+
+        for (int j = count - 1; j >= i; --j)
+            figure[j + cnt] = figure[j];
+
+        for (int k = 0; k < cnt; ++k) {
+            CFigure* ff = g->FigureAt(k);
+            ff->SetSel(false);
+            ff->SetInGroup(false);
+            figure[i + k] = ff;
+        }
+
+        count += cnt;
+
+        g->ClearWithoutDeletingChildren();
+
+        lastEvent = StorageEvent::StructureChanged;
+        notify();
+        return g;
+    }
+    return nullptr;
+}
+
+CFigure* MyStorage::FindById(int id) const {
+    for (int i = 0; i < count; ++i) {
+        if (figure[i] && figure[i]->Id() == id)
+            return figure[i];
+    }
+    return nullptr;
+}
+
+int indexOfPtr(const std::vector<CFigure*>& v, CFigure* f) {
+    for (int i = 0; i < (int)v.size(); ++i)
+        if (v[i] == f) return i;
+    return -1;
+}
+
+int MyStorage::IndexOf(CFigure* f) const {
+    for (int i = 0; i < count; ++i)
+        if (figure[i] == f) return i;
+    return -1;
+}
+
+void push_unique(std::vector<CFigure*>& v, CFigure* f) {
+    if (!f) return;
+    if (std::find(v.begin(), v.end(), f) == v.end())
+        v.push_back(f);
+}
+
+void MyStorage::Copy(){
+    /*
+    for (auto* f : clipboard) delete f;
+    clipboard.clear();
+
+    for (auto* f : SelectedFigures) {
+        if (!f) continue;
+        clipboard.push_back(f->clone());
+    }*/
+    for (auto* f : clipboard) delete f;
+    clipboard.clear();
+    arrowClipboard.clear();
+
+    std::vector<CFigure*> orig;
+    orig.reserve(count);
+    for (int i = 0; i < count; ++i) {
+        CFigure* f = figure[i];
+        if (f && f->Selected())
+            orig.push_back(f);
+    }
+    if (orig.empty()) return;
+
+    clipboard.reserve(orig.size());
+    for (auto* f : orig) {
+        CFigure* c = f->clone();
+        if (!c) continue;
+        c->SetSel(false);
+        c->SetInGroup(false);
+        clipboard.push_back(c);
+    }
+
+    if ((int)clipboard.size() != (int)orig.size()) {
+        for (auto* f : clipboard) delete f;
+        clipboard.clear();
+        arrowClipboard.clear();
+        return;
+    }
+
+    for (auto* ar : arrows) {
+        if (!ar || !ar->Src() || !ar->Dst()) continue;
+
+        int ia = indexOfPtr(orig, ar->Src());
+        int ib = indexOfPtr(orig, ar->Dst());
+        if (ia == -1 || ib == -1) continue;
+
+        arrowClipboard.push_back({ ia, ib, ar->IsBidirectional() });
+    }
+}
+
+void MyStorage::Cut() {
+    Copy();
+    Del();
+}
+
+/*
+void MyStorage::Paste(int dx, int dy) {
+    /*
+    DelSelection();
+
+    for (auto* f : clipboard) {
+        if (!f) continue;
+
+        CFigure* pasted = f->clone();
+        pasted->Move(dx, dy, 1000000, 1000000);
+        pasted->SetSel(true);
+
+        Add(pasted);
+        SelectedFigures.push_back(pasted);
+    }
+
+    lastEvent = StorageEvent::StructureChanged;
+    notify();
+    PasteClipboard(dx, dy, 1000000, 1000000);
+}
+*/
+
+void MyStorage::InsertAt(int index, CFigure* f) {
+    if (!f) return;
+    if (index < 0) index = 0;
+    if (index > count) index = count;
+
+    for (int j = count; j > index; --j)
+        figure[j] = figure[j - 1];
+
+    figure[index] = f;
+    ++count;
+
+    lastEvent = StorageEvent::StructureChanged;
+    notify();
+}
+
+
+
+std::vector<CFigure*> MyStorage::Paste(int dx, int dy, int winW, int winH) {
+    std::vector<CFigure*> pasted;
+    if (clipboard.empty()) return pasted;
+
+    DelSelection();
+    for (auto* a : arrows) if (a) a->SetSel(false);
+
+    pasted.reserve(clipboard.size());
+
+    for (auto* proto : clipboard) {
+        if (!proto) continue;
+        CFigure* f = proto->clone();
+        if (!f) continue;
+
+        f->Move(dx, dy, winW, winH);
+        f->SetSel(true);
+
+        Add(f);
+        SelectedFigures.push_back(f);
+        pasted.push_back(f);
+    }
+
+    if ((int)pasted.size() == (int)clipboard.size()) {
+        for (const auto& ac : arrowClipboard) {
+            if (ac.a < 0 || ac.a >= (int)pasted.size()) continue;
+            if (ac.b < 0 || ac.b >= (int)pasted.size()) continue;
+            AddArrow(pasted[ac.a], pasted[ac.b], ac.bid);
+        }
+    }
+
+    lastEvent = StorageEvent::StructureChanged;
+    notify();
+    return pasted;
+}
+
+void MyStorage::DetachNoArrows(CFigure* f) {
+    if (!f) return;
+
+    int newCount = 0;
+    for (int i = 0; i < count; ++i) {
+        if (figure[i] != f) figure[newCount++] = figure[i];
+    }
+    count = newCount;
+
+    for (auto it = SelectedFigures.begin(); it != SelectedFigures.end(); ) {
+        if (*it == f) it = SelectedFigures.erase(it);
+        else ++it;
+    }
+}
+
+
+void MyStorage::SetPenWidthTo(int w)
+{
+    auto sel = GetSelectedAll();
+    for (auto* f : sel) {
+        f->SetPenWidth(w);
+    }
+}
+
+void MyStorage::SetPenColorToSelected(const QColor& c)
+{
+    auto sel = GetSelectedAll();
+    for (auto* f : sel) {
+        f->SetPen(c);
+    }
+}
+
+void MyStorage::SetPenWidthToSelected(int w)
+{
+    auto sel = GetSelectedAll();
+    for (auto* f : sel) {
+        f->SetPenWidth(w);
+    }
+}
