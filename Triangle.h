@@ -12,6 +12,7 @@ private:
     QPoint a;
     QPoint b;
     QPoint c;
+    void setSize(int newW, int newH);
 
 public:
     CTriangle(QPoint p1, QPoint p2);
@@ -30,6 +31,12 @@ public:
     void load(std::istream& in, CFactory* factory) override;
 
     CFigure* clone() const override;
+
+    int propCount() const override;
+    PropMeta propMeta(int index) const override;
+    QVariant getProp(int index) const override;
+    bool setProp(int index, const QVariant& v) override;
+    QPolygonF polygon() const { return QPolygonF() << a << b << c; }
 };
 
 

@@ -129,7 +129,7 @@ void MyStorage::Remove(CFigure* f, bool doDelete){
         CArrow* ar = *it;
         if (!ar) { it = arrows.erase(it); continue; }
 
-        if (ar->Src() == f || ar->Dst() == f || ar->Selected()) {
+        if (ar->Src() == f || ar->Dst() == f/* || ar->Selected()*/) {
             delete ar;
             it = arrows.erase(it);
         } else {
@@ -324,30 +324,6 @@ void MyStorage::UnGrouping(){
 
 
 bool MyStorage::Save(const std::string& s){
-    /*
-    std::ofstream out(s);
-    if (!out) return false;
-
-    out << count << '\n';
-
-    for(int i = 0; i < count; i++){
-        figure[i]->save(out);
-    }
-
-    out << arrows.size() << '\n';
-    for (auto* ar : arrows) {
-        int aa = -1;
-        int bb = -1;
-
-        for (int i = 0; i < count; ++i) {
-            if (figure[i] == ar->Src()) aa = i;
-            if (figure[i] == ar->Dst()) bb = i;
-        }
-
-        out << aa << ' ' << bb << '\n';
-    }
-
-    return true;*/
 
     std::ofstream out(s);
     if (!out) return false;
@@ -383,44 +359,6 @@ bool MyStorage::Save(const std::string& s){
 }
 
 bool MyStorage::Load(const std::string& s, CFactory* factory){
-    /*std::ifstream in(s);
-    if (!in) return false;
-
-    int n;
-    in >> n;
-
-    for (int i = 0; i < count; ++i)
-        delete figure[i];
-    count = 0;
-
-    for (auto* ar : arrows)
-        delete ar;
-    arrows.clear();
-
-    for (int i = 0; i < n; ++i){
-        std::string type;
-        in >> type;
-
-        CFigure* obj = factory->create(type);
-
-        obj->load(in, factory);
-        Add(obj);
-    }
-
-    int na;
-    in >> na;
-
-    for (int i = 0; i < na; ++i){
-        int aa, bb;
-        in >> aa >> bb;
-
-        if (aa >= 0 && aa < count && bb >= 0 && bb < count) {
-            arrows.push_back(new CArrow(figure[aa], figure[bb]));
-        }
-    }
-
-
-    return true;*/
 
     std::ifstream in(s);
     if (!in) return false;
@@ -529,13 +467,13 @@ void MyStorage::RemoveArrow(CArrow* ar) {
         }
     }
 }
-
+/*
 bool MyStorage::Contains(CFigure* f) const {
     for (int i = 0; i < count; ++i)
         if (figure[i] == f) return true;
     return false;
 }
-
+*/
 
 void MyStorage::InsertFigure(CFigure* f) {
     if (!f) return;
@@ -544,7 +482,7 @@ void MyStorage::InsertFigure(CFigure* f) {
     notify();
 }
 
-Group* MyStorage::UnGroupSelectedAndTake()
+Group* MyStorage::UnGroupSelected()
 {
     for (int i = 0; i < count; ++i) {
         Group* g = dynamic_cast<Group*>(figure[i]);
@@ -570,7 +508,7 @@ Group* MyStorage::UnGroupSelectedAndTake()
 
         count += cnt;
 
-        g->ClearWithoutDeletingChildren();
+        g->ClearCount();
 
         lastEvent = StorageEvent::StructureChanged;
         notify();
@@ -618,13 +556,14 @@ void MyStorage::Copy(){
     clipboard.clear();
     arrowClipboard.clear();
 
-    std::vector<CFigure*> orig;
+ /*   std::vector<CFigure*> orig;
     orig.reserve(count);
     for (int i = 0; i < count; ++i) {
         CFigure* f = figure[i];
         if (f && f->Selected())
             orig.push_back(f);
-    }
+    }*/
+    std::vector<CFigure*> orig = GetSelectedAll();
     if (orig.empty()) return;
 
     clipboard.reserve(orig.size());
@@ -656,10 +595,11 @@ void MyStorage::Copy(){
 
 void MyStorage::Cut() {
     Copy();
-    Del();
+    //Del();
+    DeleteSelectedNoFree();
 }
 
-/*
+
 void MyStorage::Paste(int dx, int dy) {
     /*
     DelSelection();
@@ -676,10 +616,10 @@ void MyStorage::Paste(int dx, int dy) {
     }
 
     lastEvent = StorageEvent::StructureChanged;
-    notify();
+    notify();*/
     PasteClipboard(dx, dy, 1000000, 1000000);
 }
-*/
+
 
 void MyStorage::InsertAt(int index, CFigure* f) {
     if (!f) return;
@@ -698,7 +638,7 @@ void MyStorage::InsertAt(int index, CFigure* f) {
 
 
 
-std::vector<CFigure*> MyStorage::Paste(int dx, int dy, int winW, int winH) {
+std::vector<CFigure*> MyStorage::PasteClipboard(int dx, int dy, int winW, int winH) {
     std::vector<CFigure*> pasted;
     if (clipboard.empty()) return pasted;
 
@@ -772,3 +712,26 @@ void MyStorage::SetPenWidthToSelected(int w)
         f->SetPenWidth(w);
     }
 }
+
+void MyStorage::DeleteSelectedNoFree() {
+    DelArr();
+
+    int newCount = 0;
+    for (int i = 0; i < count; ++i) {
+        CFigure* ff = figure[i];
+        if (ff && ff->Selected()) {
+        } else {
+            figure[newCount++] = ff;
+        }
+    }
+    count = newCount;
+
+    DelSelection();
+    lastEvent = StorageEvent::StructureChanged;
+    notify();
+}
+
+
+
+
+

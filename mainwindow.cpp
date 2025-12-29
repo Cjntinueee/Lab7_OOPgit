@@ -59,12 +59,8 @@ void MainWindow::onPropsSelectedChanged(bool selected)
 
 void MainWindow::onTreeObjSel(CFigure* obj)
 {
-    //storage.SelectOnly(obj);
-    //update();
+
     storage.SelectOnly(obj);
-    //currentFig = obj;
-    //updatePropsPanel();
-    //props->setObject(currentFig);
     syncProps(true);
     update();
 }
@@ -341,7 +337,7 @@ void MainWindow::keyPressEvent(QKeyEvent *event){
 
     if ((event->modifiers() & Qt::ControlModifier) && event->key() == Qt::Key_V) {
         //cmdMgr.execute(new CPasteCommand(&storage, 20, 20, width(), height()));
-        storage.Paste(20, 20, width(), height());
+        storage.Paste(/*20, 20, width(), height()*/);
         syncProps(true);
         //updatePropsPanel();
         update();
@@ -488,7 +484,6 @@ void MainWindow::syncProps(bool keepLastIfNone)
             currentFig = nullptr;
             props->setObject(nullptr);
         }
-        // keepLastIfNone==true -> оставляем как есть (панель показывает последний объект)
         return;
     }*/
     auto sel = storage.GetSelectedAll();

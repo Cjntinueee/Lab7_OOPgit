@@ -1,4 +1,4 @@
-#include "PropertiesPanel.h"
+#include <PropertiesPanel.h>
 #include <QVBoxLayout>
 #include <QColorDialog>
 
@@ -7,7 +7,6 @@ PropertiesPanel::PropertiesPanel(QWidget* parent) : QWidget(parent)
     auto* v = new QVBoxLayout(this);
     title = new QLabel("");
     title->setAlignment(Qt::AlignCenter);
-    //title->setStyleSheet("font-weight:bold;");
     v->addWidget(title);
 
     form = new QFormLayout();
@@ -66,8 +65,7 @@ void PropertiesPanel::rebuild()
             auto* btn = new QPushButton();
             btn->setEnabled(m.editable);
             btn->setProperty("propIndex", i);
-            QColor c = val.value<QColor>();
-            //btn->setStyleSheet(QString("background-color:%1").arg(c.name()));
+            //QColor c = val.value<QColor>();
             connect(btn, &QPushButton::clicked, this, &PropertiesPanel::onColorClicked);
             editor = btn;
         }
@@ -120,9 +118,6 @@ void PropertiesPanel::onColorClicked()
     if (!c.isValid()) return;
 
     object->setProp(idx, QVariant(c));
-
-    //if (auto* btn = qobject_cast<QPushButton*>(s))
-        //btn->setStyleSheet(QString("background-color:%1").arg(c.name()));
 
     emit edited();
 }

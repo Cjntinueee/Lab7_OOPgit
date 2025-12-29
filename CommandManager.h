@@ -11,7 +11,6 @@ private:
     std::stack<CCommand*> _undo;
     std::stack<CCommand*> _redo;
 
-    //CCommand* _preview = nullptr;
 public:
     std::vector<std::string> history;
 
@@ -19,10 +18,7 @@ public:
     void execute(CCommand* cmd);
     void undo();
     void redo();
-/*
-    void beginPreview();
-    void preview(CCommand* cmd);
-    void endPreview(CCommand* finalCmd);*/
+
     ~CCommandManager();
 };
 

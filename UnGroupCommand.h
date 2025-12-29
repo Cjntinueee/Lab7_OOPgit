@@ -12,6 +12,7 @@ private:
     std::vector<CFigure*> members;
 
     int groupIndex = -1;
+    bool captured = false;
 
 public:
     CUnGroupCommand(MyStorage* s);

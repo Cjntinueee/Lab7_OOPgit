@@ -9,11 +9,11 @@
 
 
 
-CEllipse::CEllipse(int x, int y, int rad1, int rad2){
-    this->x = x;
-    this->y = y;
-    this->rad1 = rad1;
-    this->rad2 = rad2;
+CEllipse::CEllipse(int x, int y, int rad1, int rad2): CFigure(x, y), rad1(rad1), rad2(rad2){
+    //this->x = x;
+    //this->y = y;
+    //this->rad1 = rad1;
+    //this->rad2 = rad2;
     select = false;
 }
 
@@ -61,9 +61,10 @@ void CEllipse::save(std::ostream& out) const {
     out << Type().toStdString() << '\n'
         << x << ' ' << y << ' '
         << rad1 << ' ' << rad2 << '\n'
-        << colorP.red() << ' '
-        << colorP.green() << ' '
-        << colorP.blue()
+        << pen.color().red() << ' '
+        << pen.color().green() << ' '
+        << pen.color().blue() << ' '
+        << pen.width() << ' '
         << '\n';
 }
 void CEllipse::load(std::istream& in, CFactory* factory) {
@@ -71,7 +72,10 @@ void CEllipse::load(std::istream& in, CFactory* factory) {
     int r, g, b;
     in >> x >> y >> rad1 >> rad2;
     in >> r >> g >> b;
-    colorP = QColor(r, g, b);
+    SetPen(QColor(r, g, b));
+    int pw;
+    in >> pw;
+    pen.setWidth(pw);
 }
 
 
@@ -91,8 +95,8 @@ PropMeta CEllipse::propMeta(int idx) const {
 
     PropMeta m;
     int j = idx - CFigure::BasePropCount;
-    if (j == 0) { m.name="RadX"; m.type=PropMeta::Type::Int; m.editable=true; m.minInt=1; m.maxInt=10000; }
-    if (j == 1) { m.name="RadY"; m.type=PropMeta::Type::Int; m.editable=true; m.minInt=1; m.maxInt=10000; }
+    if (j == 0) { m.name="radX"; m.type=PropMeta::Type::Int; m.editable=true; m.minInt=1; m.maxInt=10000; }
+    if (j == 1) { m.name="radY"; m.type=PropMeta::Type::Int; m.editable=true; m.minInt=1; m.maxInt=10000; }
     return m;
 }
 

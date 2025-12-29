@@ -11,13 +11,6 @@ CMoveCommand::CMoveCommand(MyStorage* s, int dx, int dy, int w, int h, int t) {
 }
 
 void CMoveCommand::execute() {
-    /*
-    if (!_storage) return;
-    //if (firstExecute) { firstExecute = false; return; }
-    targets = _storage->GetSelectedAll();
-    for (auto* f : targets) {
-        f->Move(_dx, _dy, winW, winH, true, token);
-    }*/
     if (!_storage) return;
 
     if (targets.empty())
@@ -34,6 +27,8 @@ void CMoveCommand::unexecute() {
 }
 
 CCommand* CMoveCommand::clone() {
-    return new CMoveCommand(_storage, _dx, _dy, winW, winH, token);
+    auto* c = new CMoveCommand(_storage, _dx, _dy, winW, winH, token);
+    c->targets = targets;
+    return c;
 }
 

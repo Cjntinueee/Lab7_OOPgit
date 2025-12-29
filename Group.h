@@ -37,7 +37,9 @@ public:
     CFigure* FigureAt(int i) const;
 
     CFigure* clone() const override;
-    void ClearWithoutDeletingChildren() { countG = 0;}
+    void ClearCount() { countG = 0;}
+
+    void SetPenWidth(int w) override;
 };
 
 #endif // GROUP_H

@@ -21,6 +21,8 @@
 #include <GroupCommand.h>
 #include <UnGroupCommand.h>
 #include <PropertiesPanel.h>
+#include <AddArrow.h>
+#include <DeleteArrow.h>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -66,12 +68,6 @@ private slots:
 
     void onPropsEdited() { update();}
 
-    //void updatePropsPanel();
-
-    //void on_btnFigColor_clicked();
-    //void on_sbPenWidth_valueChanged(int v);
-    //void on_sbFigSize_editingFinished();
-    //void on_checkBox_sel_stateChanged(int st);
 
 private:
     Ui::MainWindow *ui;

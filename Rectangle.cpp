@@ -17,10 +17,10 @@ CRect::CRect(int x, int y, int width, int height){
 void CRect::paintt(QPainter *p){
 
     if (this->Selected()){
-        p->setPen(QPen(colorP));
+        p->setPen(pen);
         p->setBrush(QBrush(QColor(0, 120, 215, 60)));
     } else {
-        p->setPen(QPen(colorP));
+        p->setPen(pen);
         p->setBrush(QBrush(Qt::transparent));
     }
 
@@ -51,9 +51,10 @@ void CRect::save(std::ostream& out) const {
     out << Type().toStdString() << '\n'
         << x << ' ' << y << ' '
         << width << ' ' << height << '\n'
-        << colorP.red() << ' '
-        << colorP.green() << ' '
-        << colorP.blue()
+        << pen.color().red() << ' '
+        << pen.color().green() << ' '
+        << pen.color().blue() << ' '
+        << pen.width() << ' '
         << '\n';
 }
 void CRect::load(std::istream& in, CFactory* factory) {
@@ -61,7 +62,10 @@ void CRect::load(std::istream& in, CFactory* factory) {
     int r, g, b;
     in >> x >> y >> width >> height;
     in >> r >> g >> b;
-    colorP = QColor(r, g, b);
+    SetPen(QColor(r, g, b));
+    int pw;
+    in >> pw;
+    pen.setWidth(pw);
 }
 
 

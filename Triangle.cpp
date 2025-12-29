@@ -1,5 +1,5 @@
 #include <Triangle.h>
-
+#include <QPolygonF>
 
 
 
@@ -32,10 +32,10 @@ CTriangle::CTriangle(QPoint p1, QPoint p2)
 void CTriangle::paintt(QPainter *p)
 {
     if (Selected()) {
-        p->setPen(QPen(colorP));
+        p->setPen(pen);
         p->setBrush(QBrush(QColor(0, 120, 215, 60)));
     } else {
-        p->setPen(QPen(colorP));
+        p->setPen(pen);
         p->setBrush(Qt::NoBrush);
     }
 
@@ -103,14 +103,9 @@ void CTriangle::Move(int dx, int dy, int winW, int winH, bool notifyObs, int tok
     QPoint newB(b.x() + dx, b.y() + dy);
     QPoint newC(c.x() + dx, c.y() + dy);
 
-    if (newA.x() < 0 || newA.y() < 0 || newA.x() > winW || newA.y() > winH)
-        return;
-
-    if (newB.x() < 0 || newB.y() < 0 || newB.x() > winW || newB.y() > winH)
-        return;
-
-    if (newC.x() < 0 || newC.y() < 0 || newC.x() > winW || newC.y() > winH)
-        return;
+    if (newA.x() < 0 || newA.y() < 0 || newA.x() > winW || newA.y() > winH) return;
+    if (newB.x() < 0 || newB.y() < 0 || newB.x() > winW || newB.y() > winH) return;
+    if (newC.x() < 0 || newC.y() < 0 || newC.x() > winW || newC.y() > winH) return;
 
     a = newA;
     b = newB;
@@ -118,6 +113,14 @@ void CTriangle::Move(int dx, int dy, int winW, int winH, bool notifyObs, int tok
 
     x += dx;
     y += dy;
+
+    lastDx = dx;
+    lastDy = dy;
+    lastMoveToken = token;
+
+    if (notifyObs && (dx != 0 || dy != 0)) {
+        notify();
+    }
 }
 
 
@@ -156,7 +159,11 @@ void CTriangle::save(std::ostream& out) const {
         << a.x() << " " << a.y() << " "
         << b.x() << " " << b.y() << " "
         << c.x() << " " << c.y() << "\n"
-        << colorP.red() << " " << colorP.green() << " " << colorP.blue() << "\n";
+        << pen.color().red() << ' '
+        << pen.color().green() << ' '
+        << pen.color().blue() << ' '
+        << pen.width() << ' '
+        << "\n";
 }
 void CTriangle::load(std::istream& in, CFactory* factory) {
 
@@ -173,8 +180,11 @@ void CTriangle::load(std::istream& in, CFactory* factory) {
     x = std::min({a.x(), b.x(), c.x()});
     y = std::min({a.y(), b.y(), c.y()});
 
-    colorP = QColor(r, g, bcol);
+    SetPen(QColor(r, g, bcol));
     select = false;
+    int pw;
+    in >> pw;
+    pen.setWidth(pw);
 }
 
 
@@ -186,3 +196,80 @@ CFigure* CTriangle::clone() const {
     e->SetInGroup(false);
     return e;
 }
+
+int CTriangle::propCount() const {
+    return CFigure::BasePropCount + 2;
+}
+
+PropMeta CTriangle::propMeta(int idx) const {
+    if (idx < CFigure::BasePropCount) return CFigure::propMeta(idx);
+
+    PropMeta m;
+    int j = idx - CFigure::BasePropCount;
+
+    if (j == 0) { m.name = "TriW"; m.type = PropMeta::Type::Int; m.editable = true; m.minInt = 1; m.maxInt = 10000; }
+    if (j == 1) { m.name = "TriH"; m.type = PropMeta::Type::Int; m.editable = true; m.minInt = 1; m.maxInt = 10000; }
+    return m;
+}
+
+QVariant CTriangle::getProp(int idx) const {
+    if (idx < CFigure::BasePropCount) return CFigure::getProp(idx);
+
+    int j = idx - CFigure::BasePropCount;
+    if (j == 0) return QVariant(Width());
+    if (j == 1) return QVariant(Height());
+    return {};
+}
+
+bool CTriangle::setProp(int idx, const QVariant& v) {
+    if (idx < CFigure::BasePropCount) return CFigure::setProp(idx, v);
+
+    int j = idx - CFigure::BasePropCount;
+    int val = v.toInt();
+    if (val < 1) val = 1;
+
+    if (j == 0) { setSize(val, Height()); return true; }
+    if (j == 1) { setSize(Width(), val); return true; }
+    return false;
+}
+
+
+void CTriangle::setSize(int newW, int newH) {
+    if (newW < 1) newW = 1;
+    if (newH < 1) newH = 1;
+
+    int minX = std::min({a.x(), b.x(), c.x()});
+    int minY = std::min({a.y(), b.y(), c.y()});
+
+    int oldW = Width();
+    int oldH = Height();
+    if (oldW < 1) oldW = 1;
+    if (oldH < 1) oldH = 1;
+
+    const double sx = double(newW) / double(oldW);
+    const double sy = double(newH) / double(oldH);
+
+    auto scalePt = [&](const QPoint& p) {
+        int nx = int(std::lround(minX + (p.x() - minX) * sx));
+        int ny = int(std::lround(minY + (p.y() - minY) * sy));
+        return QPoint(nx, ny);
+    };
+
+    a = scalePt(a);
+    b = scalePt(b);
+    c = scalePt(c);
+
+    x = std::min({a.x(), b.x(), c.x()});
+    y = std::min({a.y(), b.y(), c.y()});
+
+    notify();
+}
+
+
+
+
+
+
+
+
+

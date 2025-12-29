@@ -9,8 +9,14 @@ void CObject::addObs(CObserver* obs){
 
 
 void CObject::notify(){
+    /*
     for (int i = 0; i < observers.size(); i++){
         observers[i]->OnSubjChanged(this);
+    }*/
+    auto snapshot = observers;
+    for (auto* obs : snapshot) {
+        if (obs)
+            obs->OnSubjChanged(this);
     }
 }
 

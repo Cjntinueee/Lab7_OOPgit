@@ -229,7 +229,16 @@ CFigure* Group::clone() const {
     return g;
 }
 
+void Group::SetPenWidth(int w)
+{
+    CFigure::SetPenWidth(w);
 
+    for (int i = 0; i < GetCountG(); ++i) {
+        if (auto* f = FigureAt(i)) {
+            f->SetPenWidth(w);
+        }
+    }
+}
 
 
 

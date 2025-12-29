@@ -17,8 +17,9 @@ private:
     bool bidirectional = false;
 
     bool propagating = false;
-    //bool SelectA = false;
+
 public:
+
     CArrow(CFigure* a, CFigure* b, bool bid = false) : A(a), B(b), bidirectional(bid) {
         if (A) A->addObs(this);
         if (bidirectional && B) B->addObs(this);
@@ -50,6 +51,10 @@ public:
     void SetBidirectional(bool bid);
     bool IsBidirectional() const { return bidirectional; }
 
-    CFigure* clone() const override {}
+    CFigure* clone() const override {
+        return new CArrow(nullptr, nullptr, bidirectional);
+    }
+
+
 };
 #endif // ARROW_H

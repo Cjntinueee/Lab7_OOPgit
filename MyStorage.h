@@ -78,26 +78,34 @@ public:
     const std::vector<CArrow*>& GetArrows() const { return arrows; }
     void RemoveArrow(CArrow* ar);
 
-    bool Contains(CFigure* f) const;
+    //bool Contains(CFigure* f) const;
 
     void Copy();
     void Cut();
-    //void Paste(int dx = 20, int dy = 20);
+    void Paste(int dx = 20, int dy = 20);
 
-    Group* UnGroupSelectedAndTake();
+    Group* UnGroupSelected();
     void InsertFigure(CFigure* f);
 
     CFigure* FindById(int id) const;
     void InsertAt(int index, CFigure* f);
     int IndexOf(CFigure* f) const;
 
-    std::vector<CFigure*> Paste(int dx, int dy, int winW, int winH);
+    std::vector<CFigure*> PasteClipboard(int dx, int dy, int winW, int winH);
     void DetachNoArrows(CFigure* f);
 
     void SetPenWidthTo(int w);
 
     void SetPenColorToSelected(const QColor& c);
     void SetPenWidthToSelected(int w);
+
+    void DeleteSelectedNoFree();
+
+
+    //void AddArrow(CArrow* ar);
+    //int  ArrowIndexOf(CArrow* ar) const;
+    //void RemoveArrowNoDelete(CArrow* ar);
+    //void InsertArrowAt(int idx, CArrow* ar);
 };
 
 #endif // MYSTORAGE_H

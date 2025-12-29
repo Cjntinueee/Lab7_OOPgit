@@ -17,7 +17,7 @@ CFigure::CFigure()
     select = false;
     colorP = Qt::white;
 }
-*/
+*//*
 CFigure::CFigure(int x, int y)
 {
     this->x = x;
@@ -27,9 +27,29 @@ CFigure::CFigure(int x, int y)
     pen = QPen(colorP);
     pen.setWidth(1);
 
+}*/
+
+CFigure::CFigure(int x_, int y_)
+    : x(x_), y(y_), select(false), colorP(Qt::white),
+    lastDx(0), lastDy(0),
+    moveNotifyEnabled(true), lastMoveToken(0),
+    InGroup(false),
+    _id(_nextId++),
+    pen(QPen(Qt::white))
+{
+    pen.setWidth(1);
 }
 
-
+CFigure::CFigure()
+    : x(0), y(0), select(false), colorP(Qt::white),
+    lastDx(0), lastDy(0),
+    moveNotifyEnabled(true), lastMoveToken(0),
+    InGroup(false),
+    _id(_nextId++),
+    pen(QPen(Qt::white))
+{
+    pen.setWidth(1);
+}
 
 bool CFigure::MouseIn(int x, int y)
 {

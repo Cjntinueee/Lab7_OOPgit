@@ -38,7 +38,7 @@ protected:
 
 public:
 
-    //CFigure();
+    CFigure();
     CFigure(int x, int y);
     virtual ~CFigure() {}
 
@@ -73,17 +73,10 @@ public:
     void SetInGroup(bool ig);
     bool GetInGroup() {return InGroup;}
 
-    CFigure(): _id(_nextId++) {
-        x = 0;
-        y = 0;
-        select = false;
-        colorP = Qt::white;
-    }
-
     int Id() const { return _id; }
     virtual CFigure* clone() const = 0;
 
-    void SetPenWidth(int w);
+    virtual void SetPenWidth(int w);
     int GetPenWidth() const;
 
     enum class PropId { PenColor, PenWidth, Width, Height };
@@ -92,7 +85,7 @@ public:
     //virtual QVariant GetProp(PropId id) const;
     //virtual bool SetProp(PropId id, const QVariant& v);
 
-    static constexpr int BasePropCount = 3; // Selected, PenColor, PenWidth
+    static constexpr int BasePropCount = 3; /////////
 
     int propCount() const override;
     PropMeta propMeta(int index) const override;

@@ -22,6 +22,7 @@ void CUnGroupCommand::execute()
     _group->SetSel(true);
 
     _storage->UnGroupSelectedAndTake();*/
+    /*
     if (!_storage) return;
 
     CFigure* sel = _storage->GetSelected();
@@ -37,7 +38,27 @@ void CUnGroupCommand::execute()
     _storage->DelSelection();
     _group->SetSel(true);
 
-    _storage->UnGroupSelectedAndTake();
+    _storage->UnGroupSelectedAndTake();*/
+    if (!_storage) return;
+
+    if (!captured) {
+        CFigure* sel = _storage->GetSelected();
+        _group = dynamic_cast<Group*>(sel);
+        if (!_group) return;
+
+        groupIndex = _storage->IndexOf(_group);
+
+        members.clear();
+        for (int i = 0; i < _group->GetCountG(); ++i)
+            members.push_back(_group->FigureAt(i));
+
+        captured = true;
+    } else {
+        _storage->DelSelection();
+        _storage->SelectOnly(_group);
+    }
+
+    _storage->UnGroupSelected();
 }
 
 void CUnGroupCommand::unexecute()
@@ -70,5 +91,11 @@ void CUnGroupCommand::unexecute()
 
 CCommand* CUnGroupCommand::clone()
 {
-    return new CUnGroupCommand(_storage);
+    //return new CUnGroupCommand(_storage);
+    auto* c = new CUnGroupCommand(_storage);
+    c->_group = _group;
+    c->members = members;
+    c->groupIndex = groupIndex;
+    c->captured = captured;
+    return c;
 }

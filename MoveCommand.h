@@ -12,7 +12,6 @@ private:
 
     int winW, winH;
     int token;
-    //bool firstExecute = true;
 public:
     CMoveCommand(MyStorage* s, int dx, int dy, int w, int h, int token);
     void execute() override;
